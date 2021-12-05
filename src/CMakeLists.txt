@@ -30,10 +30,10 @@ if(CPP_STARTER_USE_GTKMM)
 endif()
 
 # imgui example
-if(CPP_STARTER_USE_IMGUI)
-  message("Using Dear ImGui")
-  add_subdirectory(imgui)
-endif()
+#if(CPP_STARTER_USE_IMGUI)
+#  message("Using Dear ImGui")
+#  add_subdirectory(imgui)
+#endif()
 
 # Nana
 if(CPP_STARTER_USE_NANA)
@@ -45,12 +45,19 @@ find_package(fmt)
 find_package(spdlog)
 find_package(docopt)
 
+
 # Generic test that uses conan libs
-add_executable(intro main.cpp)
+add_executable(gserver3 main.cpp)
+
+find_package(ImGui-SFML REQUIRED)
+
 target_link_libraries(
-  intro
+  gserver3
   PRIVATE project_options
           project_warnings
+	  ImGui-SFML::ImGui-SFML
           docopt::docopt
           fmt::fmt
           spdlog::spdlog)
+
+  

@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 # Set the project name to your project name, my project isn't very descriptive
 project(myproject CXX)
+
+set (CPP_STARTER_USE_IMGUI ON)
+
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 
