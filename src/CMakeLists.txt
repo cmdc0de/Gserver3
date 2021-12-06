@@ -50,6 +50,8 @@ include (${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
 # Generic test that uses conan libs
 add_executable(gserver3 main.cpp ${UNCOMMON_SHARED_SOURCE})
 
+message ("uncomon source: ${UNCOMMON_SHARED_SOURCE}")
+
 find_package(ImGui-SFML REQUIRED)
 
 add_dependencies(gserver3 vmlib wasm-modules)

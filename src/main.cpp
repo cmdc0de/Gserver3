@@ -12,6 +12,8 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
+#include <bh_read_file.h>
+#include <wasm_export.h>
 
 static constexpr auto USAGE =
   R"(GServer3.
@@ -87,6 +89,42 @@ int main(int argc, const char **argv) {
 	getLogger()->debug("debug message std out only");
 	getLogger()->info("info message both");
 	getLogger()->flush();
+
+	static char global_heap_buf[512 * 1024];
+	char* buffer;
+	char  error_buf[128];
+	wasm_module_t module;
+	//wasm_module_inst_t module_inst;
+	//wasm_function_inst_t func;
+	//wasm_exec_env_t exec_env;
+	uint32 size;//, stack_size = 8092, heap_size = 8092;
+	
+	RuntimeInitArgs init_args;
+	memset(&init_args, 0, sizeof(RuntimeInitArgs));
+	init_args.mem_alloc_type = Alloc_With_Pool;
+	init_args.mem_alloc_option.pool.heap_buf = global_heap_buf;
+	init_args.mem_alloc_option.pool.heap_size = sizeof(global_heap_buf);
+	// Native symbols need below registration phase
+	//init_args.n_native_symbols = sizeof(native_symbols) / sizeof(NativeSymbol);
+	init_args.n_native_symbols = 0;
+	init_args.native_module_name = "env";
+	//init_args.native_symbols = native_symbols;
+	init_args.native_symbols = nullptr;
+	
+	if (!wasm_runtime_full_init(&init_args)) {
+		getLogger()->info("Init runtime environment failed.");
+		return -1;
+	} else {
+		getLogger()->info("init runtime successful");
+		const char *file = "mA.wasm";
+		buffer = bh_read_file_to_buffer(file,&size);
+		getLogger()->debug("buffer pt: {}, size {}",buffer,size);
+
+		module = wasm_runtime_load(reinterpret_cast<uint8_t *>(buffer),size, error_buf,sizeof(error_buf));
+
+		std::ignore = module;
+	}
+
 	
 
   //fmt::print("Hello, from {}\n", "{fmt}");
