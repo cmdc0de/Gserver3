@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 # Set the project name to your project name, my project isn't very descriptive
-project(myproject C CXX)
+project(myproject CXX C)
 
 set (CPP_STARTER_USE_IMGUI ON)
 
@@ -95,7 +95,9 @@ set(WAMR_BUILD_MULTI_MODULE 1)
 # build out vmlib
 set(WAMR_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}/external/wasm-micro-runtime)
 include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
-add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE})
+include (${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
+add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE} ${UNCOMMON_SHARED_SOURCE})
+
 
 ################ WASM MODULES
 # .c -> .wasm

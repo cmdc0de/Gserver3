@@ -116,7 +116,7 @@ int main(int argc, const char **argv) {
 		return -1;
 	} else {
 		getLogger()->info("init runtime successful");
-		const char *file = "mA.wasm";
+		const char *file = "./wasm-apps/mC.wasm";
 		buffer = bh_read_file_to_buffer(file,&size);
 		getLogger()->debug("buffer pt: {}, size {}",buffer,size);
 
