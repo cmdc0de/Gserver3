@@ -1,3 +1,6 @@
+
+#project (gserver3 CXX C)
+
 option(CPP_STARTER_USE_QT "Enable compilation of QT sample" OFF)
 option(CPP_STARTER_USE_FLTK "Enable compilation of FLTK sample" OFF)
 option(CPP_STARTER_USE_GTKMM "Enable compilation of GTKMM sample" OFF)
@@ -46,18 +49,10 @@ find_package(spdlog)
 find_package(docopt)
 
 
-# Generic test that uses conan libs
-add_executable(gserver3 main.cpp)
+add_executable(gserver3 main.cpp )
 
 find_package(ImGui-SFML REQUIRED)
 
-target_link_libraries(
-  gserver3
-  PRIVATE project_options
-          project_warnings
-	  ImGui-SFML::ImGui-SFML
-          docopt::docopt
-          fmt::fmt
-          spdlog::spdlog)
+add_dependencies(gserver3 vmlib wasm-modules)
 
-  
+target_link_libraries(gserver3 PRIVATE project_options project_warnings ImGui-SFML::ImGui-SFML docopt::docopt fmt::fmt spdlog::spdlog vmlib -lpthread -lm)

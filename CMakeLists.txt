@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.15)
 
 # Set the project name to your project name, my project isn't very descriptive
-project(myproject CXX)
+
+project(myproject CXX C)
 
 set (CPP_STARTER_USE_IMGUI ON)
+
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE Debug)
+endif ()
 
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
@@ -79,6 +84,25 @@ if(ENABLE_FUZZING)
   message("Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
   add_subdirectory(fuzz_test)
 endif()
+
+set(WAMR_BUILD_PLATFORM "linux")
+set(WAMR_BUILD_INTERP 1)
+set(WAMR_BUILD_AOT 0)
+set(WAMR_BUILD_JIT 0)
+set(WAMR_BUILD_LIBC_BUILTIN 1)
+set(WAMR_BUILD_LIBC_WASI 0)
+set(WAMR_BUILD_MULTI_MODULE 1)
+
+# build out vmlib
+set(WAMR_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}/external/wasm-micro-runtime)
+include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+include (${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
+add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE} ${UNCOMMON_SHARED_SOURCE})
+
+
+################ WASM MODULES
+# .c -> .wasm
+add_subdirectory(wasm-apps)
 
 add_subdirectory(src)
 
