@@ -5,7 +5,7 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 
 set(CLANG_COMMAND "/opt/wasi-sdk/bin/clang")
 
-set(CLANG_FLAGS --target=wasm32 -nostdlib)
+set(CLANG_FLAGS --target=wasm32 -nostdlib --sysroot=${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot)
 set(CLANG_FLAGS ${CLANG_FLAGS} -Wl,--no-entry,--allow-undefined,--export-all)
 
 set(SOURCE_A ${CMAKE_CURRENT_SOURCE_DIR}/mA.c)

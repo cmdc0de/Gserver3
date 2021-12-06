@@ -1,5 +1,3 @@
-int
-A()
-{
+int A() {
     return 10;
 }
