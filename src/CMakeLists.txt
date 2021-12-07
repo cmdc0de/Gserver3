@@ -49,7 +49,7 @@ find_package(spdlog)
 find_package(docopt)
 
 
-add_executable(gserver3 main.cpp )
+add_executable(gserver3 main.cpp native_impl.cpp)
 
 find_package(ImGui-SFML REQUIRED)
 

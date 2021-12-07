@@ -99,6 +99,32 @@ static void module_destroyer_cb(uint8 *buffer, uint32 size) {
 	buffer = NULL;
 }
 
+int intToStr(wasm_exec_env_t exec_env,int x, char* str, int str_len, int digit);
+int get_pow(wasm_exec_env_t exec_env,int x, int y);
+int32_t calculate_native(wasm_exec_env_t exec_env,int32_t n, int32_t func1, int32_t func2);
+
+static NativeSymbol native_symbols[] = {
+	{
+		"intToStr",       // the name of WASM function name
+		reinterpret_cast<void*>(intToStr),         // the native function pointer
+		"(i*~i)i",        // the function prototype signature, avoid to use i32
+		nullptr                // attachment is NULL
+	},
+	{
+		"get_pow",         // the name of WASM function name
+		reinterpret_cast<void*>(get_pow),          // the native function pointer
+		"(ii)i",       // the function prototype signature, avoid to use i32
+		nullptr                // attachment is NULL
+	},
+	{
+		"calculate_native",
+		reinterpret_cast<void*>(calculate_native),
+		"(iii)i",
+		nullptr
+	}
+};
+
+
 
 static char sandbox_memory_space[10 * 1024 * 1024] = { 0 };
 int main(int argc, const char **argv) {
@@ -137,7 +163,7 @@ int main(int argc, const char **argv) {
 	memset(&init_args,0,sizeof(init_args));
 	char error_buf[128] = { 0 };
 	/* parameters and return values */
-	char* WasmArgs[1] = { 0 };
+	uint32_t WasmArgs[1] = { 0 };
 
 	uint8 *file_buf = NULL;
 	uint32 file_buf_size = 0;
@@ -148,6 +174,10 @@ int main(int argc, const char **argv) {
 	init_args.mem_alloc_type = Alloc_With_Pool;
 	init_args.mem_alloc_option.pool.heap_buf = sandbox_memory_space;
 	init_args.mem_alloc_option.pool.heap_size = sizeof(sandbox_memory_space);
+	// Native symbols need below registration phase
+	init_args.n_native_symbols = sizeof(native_symbols) / sizeof(NativeSymbol);
+	init_args.native_module_name = "env";
+	init_args.native_symbols = native_symbols;
 
 	getLogger()->info("- wasm_runtime_full_init");
 	/* initialize runtime environment */
@@ -162,27 +192,43 @@ int main(int argc, const char **argv) {
 				/* instantiate the module */
 				getLogger()->debug("- wasm_runtime_instantiate\n");
 				if ((module_inst = wasm_runtime_instantiate(module, stack_size, heap_size, error_buf, sizeof(error_buf)))) {
-					/* call some functions of mC */
-					printf("\n----------------------------------------\n");
-					printf("call \"C\", it will return 0xc:i32, ===> ");
-					wasm_application_execute_func(module_inst, "C", 0, WasmArgs);
-					getLogger()->info("returns {}",WasmArgs[0]);
-					printf("call \"call_B\", it will return 0xb:i32, ===> ");
-					wasm_application_execute_func(module_inst, "call_B", 0, &WasmArgs[0]);
-					printf("call \"call_A\", it will return 0xa:i32, ===>");
-					wasm_application_execute_func(module_inst, "call_A", 0, &WasmArgs[0]);
+					wasm_exec_env_t exec_env = nullptr;
+					if((exec_env = wasm_runtime_create_exec_env(module_inst, stack_size))!=nullptr) {
+
+						wasm_function_inst_t funcC = wasm_runtime_lookup_function(module_inst, "C", NULL);
+						wasm_function_inst_t funcCallB = wasm_runtime_lookup_function(module_inst, "call_B", NULL);
+						wasm_function_inst_t funcCallA = wasm_runtime_lookup_function(module_inst, "call_A", NULL);
+						/* call some functions of mC */
+						int32_t retValf=0;
+						getLogger()->info("\n----------------------------------------\n");
+						getLogger()->info("call \"C\", it will return 0xc:i32, ===> ");
+						assert(wasm_runtime_call_wasm(exec_env, funcC, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(int32_t));
+						getLogger()->info("call C returned: {}",retValf);
+
+						getLogger()->info("call \"call_B\", it will return 0xb:i32, ===> ");
+						assert(wasm_runtime_call_wasm(exec_env, funcCallB, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(float));
+						getLogger()->info("call Call-B returned: {}",retValf);
+					
+						getLogger()->info("call \"call_A\", it will return 0xa:i32, ===>");
+						assert(wasm_runtime_call_wasm(exec_env, funcCallA, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(float));
+						getLogger()->info("call Call-B returned: {}",retValf);
 
 					/* call some functions of mB */
-					printf("call \"mB.B\", it will return 0xb:i32, ===>");
-					wasm_application_execute_func(module_inst, "$mB$B", 0, &WasmArgs[0]);
-					printf("call \"mB.call_A\", it will return 0xa:i32, ===>");
-					wasm_application_execute_func(module_inst, "$mB$call_A", 0, &WasmArgs[0]);
+					//printf("call \"mB.B\", it will return 0xb:i32, ===>");
+					//wasm_application_execute_func(module_inst, "$mB$B", 0, &WasmArgs[0]);
+					//printf("call \"mB.call_A\", it will return 0xa:i32, ===>");
+					//wasm_application_execute_func(module_inst, "$mB$call_A", 0, &WasmArgs[0]);
 
 					/* call some functions of mA */
-					printf("call \"mA.A\", it will return 0xa:i32, ===>");
-					wasm_application_execute_func(module_inst, "$mA$A", 0, &WasmArgs[0]);
-					printf("----------------------------------------\n\n");
+					//printf("call \"mA.A\", it will return 0xa:i32, ===>");
+					//wasm_application_execute_func(module_inst, "$mA$A", 0, &WasmArgs[0]);
+					//printf("----------------------------------------\n\n");
 
+/*
+make this work
     				uint32 WasmArgs2[4];
 					//char *wa2 = reinterpret_cast<char *>(&WasmArgs2[0]);
 					double arg_d = 0.000101;
@@ -192,20 +238,15 @@ int main(int argc, const char **argv) {
 					memcpy(&WasmArgs2[1], &arg_d, sizeof(arg_d));
 					memcpy(&WasmArgs2[2], &arg_f, sizeof(arg_f));
 					WasmArgs2[3] = 0;
-					//*reinterpret_cast<float*>(WasmArgs2+3) = 300.002f;
 					
 					printf("call \"generate_float\"  ===>");
 					//wasm_application_execute_func(module_inst, "generate_float", 3, &wa2);//&WasmArgs2[0]);
 					wasm_application_execute_func(module_inst, "generate_float", 3, reinterpret_cast<char **>(&WasmArgs2));
 					printf("----------------------------------------\n\n");
-
-					//if(!(func = wasm_runtime_lookup_function(module_inst, "generate_float", NULL))){
-					//	printf("The generate_float wasm function is not found.\n");
-					//}
-					// pass 4 elements for function arguments
-					//if (!wasm_runtime_call_wasm(exec_env, func, 4, argv) ) {
-					//	printf("call wasm function generate_float failed. %s\n", wasm_runtime_get_exception(module_inst));
-					//}
+*/
+					} else {
+						getLogger()->error("failed to create env");
+					}
 				} else {
 					getLogger()->error("%s\n", error_buf);
 				}
