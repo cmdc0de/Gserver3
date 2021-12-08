@@ -198,6 +198,9 @@ int main(int argc, const char **argv) {
 						wasm_function_inst_t funcC = wasm_runtime_lookup_function(module_inst, "C", NULL);
 						wasm_function_inst_t funcCallB = wasm_runtime_lookup_function(module_inst, "call_B", NULL);
 						wasm_function_inst_t funcCallA = wasm_runtime_lookup_function(module_inst, "call_A", NULL);
+						wasm_function_inst_t funcmBB = wasm_runtime_lookup_function(module_inst, "$mB$B", NULL);
+						//assert(funcmBB);
+						wasm_function_inst_t funcmBcallA = wasm_runtime_lookup_function(module_inst, "$mB$call_A", NULL);
 						/* call some functions of mC */
 						int32_t retValf=0;
 						getLogger()->info("\n----------------------------------------\n");
@@ -216,11 +219,16 @@ int main(int argc, const char **argv) {
 						memcpy(&retValf, WasmArgs, sizeof(float));
 						getLogger()->info("call Call-B returned: {}",retValf);
 
-					/* call some functions of mB */
-					//printf("call \"mB.B\", it will return 0xb:i32, ===>");
-					//wasm_application_execute_func(module_inst, "$mB$B", 0, &WasmArgs[0]);
-					//printf("call \"mB.call_A\", it will return 0xa:i32, ===>");
-					//wasm_application_execute_func(module_inst, "$mB$call_A", 0, &WasmArgs[0]);
+						/* call some functions of mB */
+						getLogger()->info("call \"mB.B\", it will return 0xb:i32, ===>");
+						assert(wasm_runtime_call_wasm(exec_env, funcmBB, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(float));
+						getLogger()->info("call m$B$B returned: {}",retValf);
+
+						getLogger()->info("call \"mB.call_A\", it will return 0xa:i32, ===>");
+						assert(wasm_runtime_call_wasm(exec_env, funcmBcallA, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(float));
+						getLogger()->info("call mB.call_A returned: {}",retValf);
 
 					/* call some functions of mA */
 					//printf("call \"mA.A\", it will return 0xa:i32, ===>");
