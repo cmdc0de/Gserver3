@@ -202,6 +202,7 @@ int main(int argc, const char **argv) {
 						wasm_function_inst_t funcmBcallA = wasm_runtime_lookup_function(module_inst, "$mB$call_A", NULL);
 						wasm_function_inst_t funcmAA = wasm_runtime_lookup_function(module_inst, "$mA$A", NULL);
 						wasm_function_inst_t funcGenFloat = wasm_runtime_lookup_function(module_inst, "generate_float", NULL);
+						wasm_function_inst_t funcCalc = wasm_runtime_lookup_function(module_inst, "calculate", NULL);
 						/* call some functions of mC */
 						int32_t retValf=0;
 						getLogger()->info("\n----------------------------------------\n");
@@ -251,8 +252,13 @@ int main(int argc, const char **argv) {
 						assert(wasm_runtime_call_wasm(exec_env, funcGenFloat, 4, WasmArgs2));
 						memcpy(&retValf, WasmArgs2, sizeof(float));
 						float *f = reinterpret_cast<float*>(&WasmArgs2[0]);
-		
 						getLogger()->info("call generate_float returned: {}",(*f));
+
+						WasmArgs2[0] = 2;
+						getLogger()->info("Call calculate ====>");
+						assert(wasm_runtime_call_wasm(exec_env, funcCalc, 1, WasmArgs2));
+						int32_t *t = reinterpret_cast<int32_t*>(&WasmArgs2[0]);
+						getLogger()->info("call calculate returned: {}", (*t));
 
 					} else {
 						getLogger()->error("failed to create env");
