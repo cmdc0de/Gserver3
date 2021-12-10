@@ -199,8 +199,9 @@ int main(int argc, const char **argv) {
 						wasm_function_inst_t funcCallB = wasm_runtime_lookup_function(module_inst, "call_B", NULL);
 						wasm_function_inst_t funcCallA = wasm_runtime_lookup_function(module_inst, "call_A", NULL);
 						wasm_function_inst_t funcmBB = wasm_runtime_lookup_function(module_inst, "$mB$B", NULL);
-						//assert(funcmBB);
 						wasm_function_inst_t funcmBcallA = wasm_runtime_lookup_function(module_inst, "$mB$call_A", NULL);
+						wasm_function_inst_t funcmAA = wasm_runtime_lookup_function(module_inst, "$mA$A", NULL);
+						wasm_function_inst_t funcGenFloat = wasm_runtime_lookup_function(module_inst, "generate_float", NULL);
 						/* call some functions of mC */
 						int32_t retValf=0;
 						getLogger()->info("\n----------------------------------------\n");
@@ -230,28 +231,29 @@ int main(int argc, const char **argv) {
 						memcpy(&retValf, WasmArgs, sizeof(float));
 						getLogger()->info("call mB.call_A returned: {}",retValf);
 
-					/* call some functions of mA */
-					//printf("call \"mA.A\", it will return 0xa:i32, ===>");
-					//wasm_application_execute_func(module_inst, "$mA$A", 0, &WasmArgs[0]);
-					//printf("----------------------------------------\n\n");
+						/* call some functions of mA */
+						getLogger()->info("call \"mA.A\", it will return 0xa:i32, ===>");
+						assert(wasm_runtime_call_wasm(exec_env, funcmAA, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(float));
+						getLogger()->info("call mA.A returned: {}",retValf);
+						getLogger()->info("----------------------------------------\n\n");
 
-/*
-make this work
-    				uint32 WasmArgs2[4];
-					//char *wa2 = reinterpret_cast<char *>(&WasmArgs2[0]);
-					double arg_d = 0.000101;
-					float arg_f = 300.002f;
-					WasmArgs2[0] = 10;
-					// the second arg will occupy two array elements
-					memcpy(&WasmArgs2[1], &arg_d, sizeof(arg_d));
-					memcpy(&WasmArgs2[2], &arg_f, sizeof(arg_f));
-					WasmArgs2[3] = 0;
-					
-					printf("call \"generate_float\"  ===>");
-					//wasm_application_execute_func(module_inst, "generate_float", 3, &wa2);//&WasmArgs2[0]);
-					wasm_application_execute_func(module_inst, "generate_float", 3, reinterpret_cast<char **>(&WasmArgs2));
-					printf("----------------------------------------\n\n");
-*/
+						uint32_t WasmArgs2[4] = {0};
+						double arg_d = 0.000101;
+						float arg_f = 300.002f;
+						WasmArgs2[0] = 10;
+						memcpy(&WasmArgs2[1], &arg_d, sizeof(arg_d));
+						memcpy(&WasmArgs2[3], &arg_f, sizeof(arg_f));
+
+						getLogger()->info("double size: {}",sizeof(arg_d));
+
+						getLogger()->info("Call generate_float ====>");
+						assert(wasm_runtime_call_wasm(exec_env, funcGenFloat, 4, WasmArgs2));
+						memcpy(&retValf, WasmArgs2, sizeof(float));
+						float *f = reinterpret_cast<float*>(&WasmArgs2[0]);
+		
+						getLogger()->info("call generate_float returned: {}",(*f));
+
 					} else {
 						getLogger()->error("failed to create env");
 					}

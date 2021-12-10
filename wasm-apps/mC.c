@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+//#include <unistd.h>
 
 __attribute__((import_module("mA")))
 __attribute__((import_name("A"))) extern int A();
@@ -22,14 +23,17 @@ int call_B() {
 }
 
 float generate_float(int iteration, double seed1, float seed2) {
-    float ret;
-    printf ("calling into WASM function: %s\n", __FUNCTION__);
+	float ret = 0.0f;
+	printf ("calling into WASM function: %s : interations %d seed1: %lf seed2: %f\n", __FUNCTION__, iteration, seed1, seed2);
 
-    for (int i=0; i<iteration; i++){
-        ret += 1.0f/seed1 + seed2;
-    }
+	for (int i=0; i<iteration; i++){
+		ret += 1.0f/seed1 + seed2;
+	}
 
-    return ret;
+	printf("ret = %f\n",ret);
+	//sync();
+
+	return ret;
 }
 
 
