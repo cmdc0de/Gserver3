@@ -99,6 +99,7 @@ include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
 include (${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
 add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE} ${UNCOMMON_SHARED_SOURCE})
 
+add_subdirectory(libs/libwss)
 
 ################ WASM MODULES
 # .c -> .wasm
