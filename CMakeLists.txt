@@ -99,7 +99,11 @@ include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
 include (${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
 add_library(vmlib STATIC ${WAMR_RUNTIME_LIB_SOURCE} ${UNCOMMON_SHARED_SOURCE})
 
-add_subdirectory(libs/libwss)
+set(LIBWSSDIR ${CMAKE_CURRENT_LIST_DIR}/libs/libwss)
+include (${LIBWSSDIR}/src/wsslib.txt)
+find_package(spdlog)
+add_library(wsslib STATIC ${LIBWSSSRC})
+target_link_libraries(wsslib PRIVATE spdlog::spdlog)
 
 ################ WASM MODULES
 # .c -> .wasm
