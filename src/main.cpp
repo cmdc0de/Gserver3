@@ -14,6 +14,8 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <bh_read_file.h>
 #include <wasm_export.h>
+#include <wsinit.h>
+#include <inet/tcp.h>
 
 static constexpr auto USAGE =
   R"(GServer3.
@@ -130,6 +132,7 @@ static char sandbox_memory_space[10 * 1024 * 1024] = { 0 };
 int main(int argc, const char **argv) {
 
 	initLoggers();
+	wss::WSInit::init(getLogger());
 
 	std::map<std::string, docopt::value> cmdLineArgs = docopt::docopt(USAGE,
 		{ std::next(argv), std::next(argv, argc) },
@@ -152,6 +155,16 @@ int main(int argc, const char **argv) {
 	getLogger()->debug("debug message std out only");
 	getLogger()->info("info message both");
 	getLogger()->flush();
+/////
+	wss::TCPSocketInterface::initialize();
+   wss::PortNum port(4321);
+   wss::ListenerSocket listener(std::shared_ptr<wss::TCPSocketInterface>(wss::TCPSocketInterface::createTCPSocket()));
+   wss::ErrorType et = listener.listen(port,100,false);
+   wss::InetAddressV4 addr("127.0.0.1");
+	if(et.ok()) {
+		getLogger()->debug("listener socket good");
+	}
+
 
 //////////////////////////////////////
 
