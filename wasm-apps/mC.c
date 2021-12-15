@@ -14,6 +14,12 @@ int intToStr(int x, char* str, int str_len, int digit);
 int get_pow(int x, int y);
 int32_t calculate_native(int32_t n, int32_t func1, int32_t func2);
 
+int32_t count=0;
+
+int getInc() {
+  return ++count;
+}
+
 int C() {
     return 12;
 }

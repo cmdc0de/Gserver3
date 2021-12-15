@@ -157,10 +157,10 @@ int main(int argc, const char **argv) {
 	getLogger()->flush();
 /////
 	wss::TCPSocketInterface::initialize();
-   wss::PortNum port(4321);
-   wss::ListenerSocket listener(std::shared_ptr<wss::TCPSocketInterface>(wss::TCPSocketInterface::createTCPSocket()));
-   wss::ErrorType et = listener.listen(port,100,false);
-   wss::InetAddressV4 addr("127.0.0.1");
+  wss::PortNum port(4321);
+  wss::ListenerSocket listener(std::shared_ptr<wss::TCPSocketInterface>(wss::TCPSocketInterface::createTCPSocket()));
+  wss::ErrorType et = listener.listen(port,100,false);
+  wss::InetAddressV4 addr("127.0.0.1");
 	if(et.ok()) {
 		getLogger()->debug("listener socket good");
 	}
@@ -216,16 +216,60 @@ int main(int argc, const char **argv) {
 						wasm_function_inst_t funcmAA = wasm_runtime_lookup_function(module_inst, "$mA$A", NULL);
 						wasm_function_inst_t funcGenFloat = wasm_runtime_lookup_function(module_inst, "generate_float", NULL);
 						wasm_function_inst_t funcCalc = wasm_runtime_lookup_function(module_inst, "calculate", NULL);
+						wasm_function_inst_t funcGetInc = wasm_runtime_lookup_function(module_inst, "getInc", NULL);
 						/* call some functions of mC */
 						int32_t retValf=0;
 						getLogger()->info("\n----------------------------------------\n");
+						getLogger()->info("call \"getInc\",  ===> ");
+						assert(wasm_runtime_call_wasm(exec_env, funcGetInc, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(int32_t));
+						getLogger()->info("call getInc returned: {}",retValf);
+						
+            getLogger()->info("\n----------------------------------------\n");
+						getLogger()->info("call \"getInc\", second time ===> ");
+						assert(wasm_runtime_call_wasm(exec_env, funcGetInc, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(int32_t));
+						getLogger()->info("call getInc returned: {}",retValf);
+            {
+					    wasm_exec_env_t exec_env2 = nullptr;
+					    if((exec_env2 = wasm_runtime_create_exec_env(module_inst, stack_size))!=nullptr) {
+						    getLogger()->info("call getInc from new exec_env from same module instance");
+						    wasm_function_inst_t funcGetInc2 = wasm_runtime_lookup_function(module_inst, "getInc", NULL);
+						    assert(wasm_runtime_call_wasm(exec_env2, funcGetInc2, 0, WasmArgs));
+						    memcpy(&retValf, WasmArgs, sizeof(int32_t));
+						    getLogger()->info("call getInc returned: {}",retValf);
+              }
+            }
+            {
+						  getLogger()->info("create new module inst and a new exec env");
+	            wasm_module_inst_t module_inst2 = NULL;
+				      if ((module_inst2 = wasm_runtime_instantiate(module, stack_size, heap_size, error_buf, sizeof(error_buf)))) {
+					      wasm_exec_env_t exec_env2 = nullptr;
+					      if((exec_env2 = wasm_runtime_create_exec_env(module_inst2, stack_size))!=nullptr) {
+						      wasm_function_inst_t funcGetInc2 = wasm_runtime_lookup_function(module_inst2, "getInc", NULL);
+						      assert(wasm_runtime_call_wasm(exec_env2, funcGetInc2, 0, WasmArgs));
+						      memcpy(&retValf, WasmArgs, sizeof(int32_t));
+						      getLogger()->info("call getInc returned: {}",retValf);
+                }
+              }
+            }
+            getLogger()->info("\n----------------------------------------\n");
+						getLogger()->info("call \"getInc\", 3rd time ===> ");
+						assert(wasm_runtime_call_wasm(exec_env, funcGetInc, 0, WasmArgs));
+						memcpy(&retValf, WasmArgs, sizeof(int32_t));
+						getLogger()->info("call getInc returned: {}",retValf);
+            sleep(1);
+
+						getLogger()->info("\n----------------------------------------\n");
 						getLogger()->info("call \"C\", it will return 0xc:i32, ===> ");
 						assert(wasm_runtime_call_wasm(exec_env, funcC, 0, WasmArgs));
+            sleep(1);
 						memcpy(&retValf, WasmArgs, sizeof(int32_t));
 						getLogger()->info("call C returned: {}",retValf);
 
 						getLogger()->info("call \"call_B\", it will return 0xb:i32, ===> ");
 						assert(wasm_runtime_call_wasm(exec_env, funcCallB, 0, WasmArgs));
+            sleep(1);
 						memcpy(&retValf, WasmArgs, sizeof(float));
 						getLogger()->info("call Call-B returned: {}",retValf);
 					
