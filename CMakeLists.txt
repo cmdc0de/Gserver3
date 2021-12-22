@@ -105,6 +105,8 @@ find_package(spdlog)
 add_library(wsslib STATIC ${LIBWSSSRC})
 target_link_libraries(wsslib PRIVATE spdlog::spdlog)
 
+add_subdirectory(libs/taskflow)
+
 ################ WASM MODULES
 # .c -> .wasm
 add_subdirectory(wasm-apps)
