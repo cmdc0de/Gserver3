@@ -47,7 +47,7 @@ endif()
 find_package(fmt)
 find_package(spdlog)
 find_package(docopt)
-
+find_package(Taskflow)
 
 add_executable(gserver3 main.cpp native_impl.cpp)
 
@@ -55,4 +55,5 @@ find_package(ImGui-SFML REQUIRED)
 
 add_dependencies(gserver3 vmlib wasm-modules wsslib)
 
-target_link_libraries(gserver3 PRIVATE project_options project_warnings ImGui-SFML::ImGui-SFML docopt::docopt fmt::fmt spdlog::spdlog vmlib wsslib -lpthread -lm)
+target_link_libraries(gserver3 PRIVATE project_options project_warnings Taskflow::Taskflow ImGui-SFML::ImGui-SFML docopt::docopt fmt::fmt spdlog::spdlog vmlib wsslib -lpthread -lm)
+

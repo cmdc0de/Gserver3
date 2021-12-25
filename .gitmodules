@@ -4,6 +4,3 @@
 [submodule "libs/libwss"]
 	path = libs/libwss
 	url = https://github.com/cmdc0de/libwss.git
-[submodule "libs/taskflow"]
-	path = libs/taskflow
-	url = https://github.com/taskflow/taskflow.git

@@ -17,6 +17,8 @@
 #include <wsinit.h>
 #include <inet/tcp.h>
 
+#include <taskflow/taskflow.hpp>
+
 static constexpr auto USAGE =
   R"(GServer3.
 
@@ -128,6 +130,21 @@ static NativeSymbol native_symbols[] = {
 
 
 
+class Test {
+  public:
+    Test() {}
+    void operator()(Test *pt) {
+        pt->p();
+    }
+    void p() {
+      printf("p\n");
+    }
+};
+
+void testFnc(Test *t) {
+  t->p();
+}
+
 static char sandbox_memory_space[10 * 1024 * 1024] = { 0 };
 int main(int argc, const char **argv) {
 
@@ -164,6 +181,20 @@ int main(int argc, const char **argv) {
 	if(et.ok()) {
 		getLogger()->debug("listener socket good");
 	}
+
+#define TASK_TEST
+#ifdef TASK_TEST
+  tf::Executor exec;
+  tf::Taskflow tflow;
+  std::list<Test*> cl;
+  cl.push_back(new Test());
+  cl.push_back(new Test());
+  cl.push_back(new Test());
+  tf::Task A = tflow.for_each(cl.begin(),cl.end(),testFnc);
+  tf::Task B = tflow.for_each(cl.begin(),cl.end(),Test());
+  A.precede(B);
+  exec.run(tflow).wait();
+#endif
 
 
 //////////////////////////////////////

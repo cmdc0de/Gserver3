@@ -1,25 +1,19 @@
 #pragma once
 
-class SocketHandler {
+class AcceptCallable {
   public:
-    SocketHandler();
-    wss::ErrorType init(wss::InetAddressV4 &addr, wss::PortNum &port, int32_t backlog);
-    wss::ErrorType AcceptAndRead();
-    wss::ErrorType sendAll();
-    std::list<wss::TcpCommChannel*> &getConnectionList() {return ConnectionList;}
+    AcceptCallable();
+    void operator() const {
+    }
   private:
-    std::list<wss::TcpCommChannel*> ConnectionList;
-
 };
 
-class AcceptAndReadTask : tf::task {
+class ReadCallable {
   public:
-    AcceptAndReadTask(std::share_ptr<SocketHandler> &sh);
+    ReadCallable();
     void operator() const {
-      //for_each?
-      std::list<ws::TCPCommChannel*> &cl = sh->getConnectionList();
-      std::ignore = cl;
     }
+  private:
 };
 
 class SendAllData : tf::task {
@@ -28,3 +22,24 @@ class SendAllData : tf::task {
     void operator() const {
     }
 };
+
+class SocketHandler {
+  public:
+    SocketHandler();
+    wss::ErrorType init(wss::InetAddressV4 &addr, wss::PortNum &port, int32_t backlog);
+    wss::ErrorType setup(tf::Taskflow &f) {
+      AcceptCallable ac;
+      std::list<ws::TCPCommChannel*> &cl = SHandler->getConnectionList();
+      tf::Task tAccept = t.for_each(cl.begin(),cl.end(),ac);
+      ReadCallable rc;
+      tf::Task tRead =   t.for_each(cl.begin(),cl.end(),rc);
+    }
+    wss::ErrorType sendAll();
+    std::list<wss::TcpCommChannel*> &getConnectionList() {return ConnectionList;}
+  private:
+    std::list<wss::TcpCommChannel*> ConnectionList;
+    ListenerSocket Listener;
+    AcceptAndReadTask AR;
+
+};
+
