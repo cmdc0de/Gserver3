@@ -1,10 +1,7 @@
 #include <functional>
 #include <iostream>
 
-#include <spdlog/spdlog.h>
-#include <spdlog/async.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/rotating_file_sink.h>
+#include "main.h"
 #include <docopt/docopt.h>
 #include <imgui.h>
 #include <imgui-SFML.h>
@@ -16,8 +13,10 @@
 #include <wasm_export.h>
 #include <wsinit.h>
 #include <inet/tcp.h>
+#include "AcceptAndRead.h"
 
 #include <taskflow/taskflow.hpp>
+#include <taskflow/core/task.hpp>
 
 static constexpr auto USAGE =
   R"(GServer3.
@@ -132,13 +131,15 @@ static NativeSymbol native_symbols[] = {
 
 class Test {
   public:
-    Test() {}
+    Test(int32_t n) : Num(n){}
     void operator()(Test *pt) {
         pt->p();
     }
     void p() {
-      printf("p\n");
+      printf("p: %u\n", Num++);
     }
+  private:
+    int32_t Num;
 };
 
 void testFnc(Test *t) {
@@ -173,6 +174,8 @@ int main(int argc, const char **argv) {
 	getLogger()->info("info message both");
 	getLogger()->flush();
 /////
+  tf::Executor exec;
+  tf::Taskflow tflow;
 	wss::TCPSocketInterface::initialize();
   wss::PortNum port(4321);
   wss::ListenerSocket listener(std::shared_ptr<wss::TCPSocketInterface>(wss::TCPSocketInterface::createTCPSocket()));
@@ -181,18 +184,29 @@ int main(int argc, const char **argv) {
 	if(et.ok()) {
 		getLogger()->debug("listener socket good");
 	}
+  std::list<wss::TCPComChannel*> ConList;
+  AcceptCallable ac(&listener,10,&ConList);
+  tf::Task c = tflow.emplace(ac);
+  std::ignore = c;
+  getLogger()->info("running taskflow!");
+  exec.run(tflow).wait();
+  getLogger()->info("done: running taskflow!");
 
-#define TASK_TEST
+//#define TASK_TEST
 #ifdef TASK_TEST
   tf::Executor exec;
   tf::Taskflow tflow;
   std::list<Test*> cl;
-  cl.push_back(new Test());
-  cl.push_back(new Test());
-  cl.push_back(new Test());
+  cl.push_back(new Test(100));
+  cl.push_back(new Test(200));
+  cl.push_back(new Test(300));
   tf::Task A = tflow.for_each(cl.begin(),cl.end(),testFnc);
-  tf::Task B = tflow.for_each(cl.begin(),cl.end(),Test());
+  A.name(std::string("1"));
+  A.dump(std::cout);
+  tf::Task B = tflow.for_each(cl.begin(),cl.end(),Test(400));
+  B.name(std::string("2"));
   A.precede(B);
+  B.dump(std::cout);
   exec.run(tflow).wait();
 #endif
 
