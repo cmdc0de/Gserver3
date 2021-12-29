@@ -88,11 +88,11 @@ jobs:
           ctest -C $BUILD_TYPE
           gcovr -j $(nproc) --delete --root ../ --print-summary --xml-pretty --xml coverage.xml .
 
-    - name: Windows - Test and coverage
-      if: runner.os == 'Windows'
-      working-directory: ./build
-      run: |
-        OpenCppCoverage.exe --sources cpp_starter_project --export_type cobertura:coverage.xml --cover_children -- ctest -C $BUILD_TYPE
+    #- name: Windows - Test and coverage
+    #  if: runner.os == 'Windows'
+    #  working-directory: ./build
+    #  run: |
+    #    OpenCppCoverage.exe --sources cpp_starter_project --export_type cobertura:coverage.xml --cover_children -- ctest -C $BUILD_TYPE
 
     - name: Publish to codecov
       uses: codecov/codecov-action@v2
