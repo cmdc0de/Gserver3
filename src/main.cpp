@@ -14,6 +14,7 @@
 #include <wsinit.h>
 #include <inet/tcp.h>
 #include "AcceptAndRead.h"
+#include <time.h>
 
 #include <taskflow/taskflow.hpp>
 #include <taskflow/core/task.hpp>
@@ -66,6 +67,8 @@ void initLoggers() {
 	slog->set_level(spdlog::level::trace);
 }
 
+//#define WASM_TEST
+#ifdef WASM_TEST
 static char * build_module_path(const char *module_name) {
     const char *module_search_path = "./wasm-apps";
     size_t sz = strlen(module_search_path) + strlen("/") + strlen(module_name) + strlen(".wasm") + 1;
@@ -127,6 +130,8 @@ static NativeSymbol native_symbols[] = {
 	}
 };
 
+static char sandbox_memory_space[10 * 1024 * 1024] = { 0 };
+#endif
 
 
 class Test {
@@ -146,7 +151,10 @@ void testFnc(Test *t) {
   t->p();
 }
 
-static char sandbox_memory_space[10 * 1024 * 1024] = { 0 };
+void dumpExecutorInfo(tf::Executor &e) {
+  getLogger()->info("Executor Info:\nNum Workers: {}\nNum Topologies: {}\n",e.num_workers(),e.num_topologies());
+}
+
 int main(int argc, const char **argv) {
 
 	initLoggers();
@@ -175,7 +183,7 @@ int main(int argc, const char **argv) {
 	getLogger()->flush();
 /////
   tf::Executor exec;
-  tf::Taskflow tflow;
+  dumpExecutorInfo(exec);
 	wss::TCPSocketInterface::initialize();
   wss::PortNum port(4321);
   wss::ListenerSocket listener(std::shared_ptr<wss::TCPSocketInterface>(wss::TCPSocketInterface::createTCPSocket()));
@@ -184,13 +192,36 @@ int main(int argc, const char **argv) {
 	if(et.ok()) {
 		getLogger()->debug("listener socket good");
 	}
-  std::list<wss::TCPComChannel*> ConList;
-  AcceptCallable ac(&listener,10,&ConList);
-  tf::Task c = tflow.emplace(ac);
-  std::ignore = c;
-  getLogger()->info("running taskflow!");
-  exec.run(tflow).wait();
-  getLogger()->info("done: running taskflow!");
+  //SocketManager MySocketManager;
+  std::list<std::shared_ptr<TextConnection>> ConList;
+  timespec ts = {0,100000};//100 ms
+  while(1) {
+    tf::Taskflow tflow;
+    std::list<std::shared_ptr<TextConnection>> newConList;
+    std::list<std::list<std::shared_ptr<TextConnection>>::const_iterator> deadCons;
+    AcceptTextCallable ac(&listener,10,&newConList);
+    tf::Task c = tflow.emplace(ac);
+    std::ignore = c;
+    SocketReadCallable src;
+    tf::Task r = tflow.for_each(ConList.begin(),ConList.end(), src);
+    std::ignore = r;
+    exec.run(tflow).wait();
+    for(auto it = ConList.begin();it!=ConList.end();++it) {
+      if((*it)->markedForDeath()) {
+        deadCons.push_back(it);
+      }
+    }
+    for(auto it = deadCons.begin();it!=deadCons.end();++it) {
+      ConList.erase(*it);
+    }
+    if(newConList.size()>0) {
+      ConList.insert(ConList.end(),newConList.begin(),newConList.end());
+    }
+    
+
+    //getLogger()->info("done: running taskflow!");
+    nanosleep(&ts,nullptr);
+  }
 
 //#define TASK_TEST
 #ifdef TASK_TEST
@@ -210,7 +241,7 @@ int main(int argc, const char **argv) {
   exec.run(tflow).wait();
 #endif
 
-
+#ifdef WASM_TEST
 //////////////////////////////////////
 
 	/* 16K */
@@ -391,6 +422,7 @@ int main(int argc, const char **argv) {
 	}
 	getLogger()->debug("- wasm_runtime_destroy\n");
 	wasm_runtime_destroy();
+#endif
 
 	if(GUI==Mode) { 
 		sf::RenderWindow window(sf::VideoMode(640, 480), "ImGui + SFML = <3");
