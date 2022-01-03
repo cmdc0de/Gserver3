@@ -17,6 +17,7 @@ public:
     if(delimHit) {
       buf[bytes] = '\0';
       ret.append(&buf[0]);
+      getIncomingBuffer().erase(0,bytes);
     }
     return delimHit;
   }
@@ -29,6 +30,15 @@ class TextConnection {
     typedef std::shared_ptr<GameTCPChannel> TextComChannel;
     typedef std::queue<std::string> CommandQueue;
   public:
+    void processCommand() {
+      std::string s = MyCommandQueue.front();
+      if(s=="connect") {
+        getLogger()->debug("connect");
+      } else {
+        getLogger()->debug("unknown");
+      }
+      MyCommandQueue.pop();
+    }
   public:
     TextConnection(const TextComChannel &p) : mChannel(p), MyCommandQueue() {}
     wss::ErrorType processInput() {

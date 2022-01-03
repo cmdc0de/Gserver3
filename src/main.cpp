@@ -209,6 +209,8 @@ int main(int argc, const char **argv) {
     for(auto it = ConList.begin();it!=ConList.end();++it) {
       if((*it)->markedForDeath()) {
         deadCons.push_back(it);
+      } else {
+        (*it)->processCommand();
       }
     }
     for(auto it = deadCons.begin();it!=deadCons.end();++it) {
@@ -218,7 +220,6 @@ int main(int argc, const char **argv) {
       ConList.insert(ConList.end(),newConList.begin(),newConList.end());
     }
     
-
     //getLogger()->info("done: running taskflow!");
     nanosleep(&ts,nullptr);
   }
